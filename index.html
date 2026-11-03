@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CHARGE ON - 가톨릭대학교 충전소 안내</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: #f8fafc;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Hide scrollbars cleanly for Notion embed iframe */
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex justify-center items-center select-none">
+
+  <!-- Main Container optimized for Notion Embed -->
+  <div class="w-full max-w-md bg-white min-h-screen sm:min-h-[780px] sm:max-h-[820px] sm:rounded-3xl shadow-xl overflow-hidden flex flex-col relative border border-slate-200/80">
+
+    <!-- App Header -->
+    <header class="p-4 bg-white border-b border-slate-100 shrink-0 space-y-3">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-2.5">
+          <div class="bg-gradient-to-tr from-blue-700 to-indigo-600 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20">
+            <i class="fa-solid fa-bolt text-lg"></i>
+          </div>
+          <div>
+            <h1 class="text-lg font-black tracking-tight text-slate-800 leading-none">CHARGE ON</h1>
+            <p class="text-[10px] text-blue-600 font-semibold tracking-wide mt-0.5">가톨릭대학교 스마트 충전안내</p>
+          </div>
+        </div>
+        <button onclick="openModal('report')" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition relative">
+          <i class="fa-regular fa-bell text-sm"></i>
+          <span class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full"></span>
+        </button>
+      </div>
+
+      <!-- Search Input -->
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+        <input 
+          id="searchInput" 
+          type="text" 
+          placeholder="건물명 또는 강의실 검색 (예: M101, 마리아관)" 
+          oninput="render()"
+          class="w-full bg-slate-100 text-xs text-slate-800 placeholder-slate-400 pl-9 pr-4 py-2.5 rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 font-medium transition"
+        />
+      </div>
+
+      <!-- Filter Badges -->
+      <div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar text-[11px] font-semibold pt-0.5">
+        <button onclick="setFilter('all')" id="btn-filter-all" class="filter-btn px-3 py-1.5 rounded-lg bg-blue-600 text-white shadow-sm shrink-0 transition">전체</button>
+        <button onclick="setFilter('available')" id="btn-filter-available" class="filter-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 shrink-0 transition">⚡ 충전 가능</button>
+        <button onclick="setFilter('many')" id="btn-filter-many" class="filter-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 shrink-0 transition">🔌 콘센트 10개+</button>
+        <button onclick="setFilter('embedded')" id="btn-filter-embedded" class="filter-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 shrink-0 transition">🖥️ 매립형 충전기</button>
+      </div>
+    </header>
+
+    <!-- Main Scrollable Body -->
+    <main class="flex-1 overflow-y-auto p-4 space-y-4 hide-scrollbar bg-slate-50">
+
+      <!-- View Tab Switcher -->
+      <div class="bg-slate-200/70 p-1 rounded-xl flex text-xs font-bold text-slate-600">
+        <button id="tab-building" onclick="switchMainTab('building')" class="flex-1 py-1.5 rounded-lg bg-white text-blue-600 shadow-sm transition text-center">건물별 탐색</button>
+        <button id="tab-everytime" onclick="switchMainTab('everytime')" class="flex-1 py-1.5 rounded-lg transition text-center flex items-center justify-center gap-1.5">
+          <span>📅 에타 공강 시간표</span>
+          <span class="bg-rose-500 text-white text-[9px] px-1.5 py-0.2 rounded-full font-extrabold">연동</span>
+        </button>
+      </div>
+
+      <!-- Building Selector Tabs -->
+      <div id="buildingSelector" class="flex gap-2 overflow-x-auto hide-scrollbar py-0.5">
+        <button onclick="selectBuilding('마리아관')" class="bldg-btn active px-3.5 py-2 rounded-xl border border-blue-600 bg-blue-600 text-white font-bold text-xs shrink-0 transition shadow-sm">
+          마리아관
+        </button>
+        <button onclick="selectBuilding('김수환관')" class="bldg-btn px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-semibold text-xs shrink-0 transition">
+          김수환관
+        </button>
+        <button onclick="selectBuilding('니콜스관')" class="bldg-btn px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-semibold text-xs shrink-0 transition">
+          니콜스관
+        </button>
+        <button onclick="selectBuilding('중앙도서관')" class="bldg-btn px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-semibold text-xs shrink-0 transition">
+          중앙도서관
+        </button>
+      </div>
+
+      <!-- Building Real-time Summary Card -->
+      <div id="buildingSummaryCard" class="bg-gradient-to-br from-slate-900 to-indigo-900 text-white rounded-2xl p-4 shadow-md relative overflow-hidden">
+        <div class="flex justify-between items-start mb-3">
+          <div>
+            <span class="text-[10px] text-blue-300 font-bold uppercase tracking-wider block">Real-Time Status</span>
+            <h2 id="summaryTitle" class="text-lg font-black tracking-tight">마리아관</h2>
+          </div>
+          <span id="summaryTotal" class="text-xs bg-white/10 px-2.5 py-1 rounded-full border border-white/10 font-medium">총 28개 강의실</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-center">
+          <div class="bg-white/10 rounded-xl p-2.5 backdrop-blur-sm border border-white/5">
+            <p class="text-[10px] text-slate-300 font-medium">충전 가능</p>
+            <p id="summaryAvailable" class="text-lg font-extrabold text-emerald-400">18개</p>
+          </div>
+          <div class="bg-white/10 rounded-xl p-2.5 backdrop-blur-sm border border-white/5">
+            <p class="text-[10px] text-slate-300 font-medium">이용 제한/불가</p>
+            <p id="summaryUnavailable" class="text-lg font-extrabold text-rose-400">10개</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Everytime Link Info Banner -->
+      <div id="everytimeBanner" class="hidden bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-2xl p-4 shadow-md text-xs space-y-1">
+        <div class="flex justify-between items-center">
+          <span class="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-sm">에브리타임 자동 연동</span>
+          <span class="text-[11px] font-medium text-rose-100">현재 공강 시간: 14:00~16:00</span>
+        </div>
+        <p class="font-bold text-sm pt-1">💡 현재 수업이 없어 자유롭게 충전할 수 있는 비어있는 강의실입니다.</p>
+      </div>
+
+      <!-- Classroom List Header -->
+      <div class="flex justify-between items-center text-xs pt-1 px-1">
+        <h3 class="font-bold text-slate-800 flex items-center gap-1.5">
+          <span>강의실 목록</span>
+          <span id="roomCountBadge" class="text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded font-extrabold text-[10px]">4개</span>
+        </h3>
+        <span class="text-slate-400 text-[11px] font-medium">동선 짧은순</span>
+      </div>
+
+      <!-- Classroom Dynamic Card Container -->
+      <div id="classroomList" class="space-y-3 pb-16">
+        <!-- Rendered dynamically via JS -->
+      </div>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bg-white border-t border-slate-100 px-6 py-2.5 flex justify-between items-center text-slate-400 text-[10px] font-bold shrink-0">
+      <button onclick="switchMainTab('building')" id="nav-home" class="flex flex-col items-center gap-1 text-blue-600">
+        <i class="fa-solid fa-house text-base"></i>
+        <span>홈</span>
+      </button>
+      <button onclick="switchMainTab('everytime')" id="nav-schedule" class="flex flex-col items-center gap-1 hover:text-slate-600">
+        <i class="fa-solid fa-calendar-day text-base"></i>
+        <span>에타공강</span>
+      </button>
+      <button onclick="openModal('report')" id="nav-report" class="flex flex-col items-center gap-1 hover:text-slate-600">
+        <i class="fa-solid fa-circle-exclamation text-base"></i>
+        <span>신고/문의</span>
+      </button>
+    </nav>
+
+    <!-- Room Detail Modal -->
+    <div id="detailModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center">
+      <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-200 max-h-[85vh] overflow-y-auto hide-scrollbar">
+        <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 id="modalRoomTitle" class="text-2xl font-black text-slate-800">M101</h3>
+              <span id="modalStatusBadge" class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-0.5 rounded-md">충전 가능</span>
+            </div>
+            <p id="modalBuilding" class="text-xs text-slate-500 font-medium mt-1">마리아관 1층 • 도보 50m</p>
+          </div>
+          <button onclick="closeModal('detail')" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <span class="text-slate-400 block text-[10px] mb-0.5">220V 콘센트</span>
+            <span id="modalPlug" class="font-black text-slate-800 text-base">24개</span>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <span class="text-slate-400 block text-[10px] mb-0.5">USB 고속포트</span>
+            <span id="modalUsb" class="font-black text-blue-600 text-base">8개</span>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 rounded-xl p-3.5 space-y-2 border border-slate-100 text-xs">
+          <div class="flex items-center gap-1.5 font-bold text-slate-700">
+            <i class="fa-solid fa-map-pin text-blue-600"></i> 세부 콘센트 위치 안내
+          </div>
+          <p id="modalLocation" class="text-slate-600 leading-relaxed">교탁 좌우측 4개, 창가 측면 벽면 12개, 책상 하단 매립 8구 설치</p>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button onclick="closeModal('detail'); openModal('report');" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition">
+            고장/오류 제보
+          </button>
+          <button onclick="closeModal('detail')" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-blue-200">
+            확인 완료
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="reportModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center">
+      <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+          <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> 충전 시설 제보 및 문의
+          </h3>
+          <button onclick="closeModal('report')" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <form onsubmit="submitReport(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block text-slate-700 font-bold mb-1">대상 강의실</label>
+            <select id="reportRoomSelect" class="w-full bg-slate-100 border-none rounded-xl p-2.5 font-medium text-slate-800 focus:ring-2 focus:ring-blue-500">
+              <option value="M101">마리아관 M101</option>
+              <option value="M102">마리아관 M102</option>
+              <option value="K201">김수환관 K201</option>
+              <option value="N302">니콜스관 N302</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-slate-700 font-bold mb-1">신고 내용</label>
+            <textarea required placeholder="예: 창가 3번 콘센트 전원이 차단되어 있습니다." rows="3" class="w-full bg-slate-100 border-none rounded-xl p-2.5 font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+          </div>
+
+          <button type="submit" class="w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 transition">
+            제보 제출하기
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Data Structure
+    const campusData = [
+      {
+        id: 'M101',
+        building: '마리아관',
+        name: 'M101',
+        status: 'available', // available, partial, unavailable
+        statusText: '충전 가능',
+        type: '매립형 충전기',
+        distance: '50m',
+        plugs: 24,
+        usb: 8,
+        locationDetail: '교탁 좌우 4개구, 중앙 대형 책상 하단 매립형 12개, 창가 벽면 8개',
+        isEmpty: true
+      },
+      {
+        id: 'M102',
+        building: '마리아관',
+        name: 'M102',
+        status: 'available',
+        statusText: '충전 가능',
+        type: '벽면 콘센트',
+        distance: '60m',
+        plugs: 12,
+        usb: 4,
+        locationDetail: '강의실 좌우 측면 벽면 및 뒷쪽 기둥 전원 단자',
+        isEmpty: true
+      },
+      {
+        id: 'M103',
+        building: '마리아관',
+        name: 'M103',
+        status: 'partial',
+        statusText: '일부 파손만 가능',
+        type: '책상 일체형',
+        distance: '80m',
+        plugs: 6,
+        usb: 2,
+        locationDetail: '창가쪽 1열 좌석 220V 단자 전용 (나머지 고장 신고됨)',
+        isEmpty: false
+      },
+      {
+        id: 'M104',
+        building: '마리아관',
+        name: 'M104',
+        status: 'unavailable',
+        statusText: '이용 불가 (수업중)',
+        type: '벽면 콘센트',
+        distance: '90m',
+        plugs: 0,
+        usb: 0,
+        locationDetail: '현재 전공 수업 진행 중으로 접근 불가',
+        isEmpty: false
+      },
+      {
+        id: 'K201',
+        building: '김수환관',
+        name: 'K201',
+        status: 'available',
+        statusText: '충전 가능',
+        type: '매립형 충전기',
+        distance: '120m',
+        plugs: 32,
+        usb: 12,
+        locationDetail: '계단식 대형 강의실 전 좌석 하단 고속 충전 단자',
+        isEmpty: true
+      },
+      {
+        id: 'N302',
+        building: '니콜스관',
+        name: 'N302',
+        status: 'available',
+        statusText: '충전 가능',
+        type: '매립형 충전기',
+        distance: '150m',
+        plugs: 16,
+        usb: 6,
+        locationDetail: '중앙 라인 책상 매립 콘센트 16구 구비',
+        isEmpty: true
+      }
+    ];
+
+    let currentBuilding = '마리아관';
+    let currentFilter = 'all';
+    let activeTab = 'building';
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('bg-slate-100', 'text-slate-600');
+      });
+      const activeBtn = document.getElementById(`btn-filter-${filter}`);
+      if(activeBtn) {
+        activeBtn.classList.remove('bg-slate-100', 'text-slate-600');
+        activeBtn.classList.add('bg-blue-600', 'text-white');
+      }
+      render();
+    }
+
+    function selectBuilding(buildingName) {
+      currentBuilding = buildingName;
+      document.querySelectorAll('.bldg-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600', 'font-bold');
+        btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200', 'font-semibold');
+      });
+      event.currentTarget.classList.remove('bg-white', 'text-slate-600', 'border-slate-200', 'font-semibold');
+      event.currentTarget.classList.add('bg-blue-600', 'text-white', 'border-blue-600', 'font-bold');
+      
+      document.getElementById('summaryTitle').innerText = buildingName;
+      render();
+    }
+
+    function switchMainTab(tab) {
+      activeTab = tab;
+      const bldgTab = document.getElementById('tab-building');
+      const etaTab = document.getElementById('tab-everytime');
+      const etaBanner = document.getElementById('everytimeBanner');
+      const bldgSelector = document.getElementById('buildingSelector');
+      const bldgSummary = document.getElementById('buildingSummaryCard');
+
+      if (tab === 'everytime') {
+        bldgTab.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+        etaTab.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+        etaBanner.classList.remove('hidden');
+        bldgSelector.classList.add('hidden');
+        bldgSummary.classList.add('hidden');
+      } else {
+        etaTab.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+        bldgTab.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+        etaBanner.classList.add('hidden');
+        bldgSelector.classList.remove('hidden');
+        bldgSummary.classList.remove('hidden');
+      }
+      render();
+    }
+
+    function render() {
+      const searchKeyword = document.getElementById('searchInput').value.toLowerCase();
+      const container = document.getElementById('classroomList');
+      container.innerHTML = '';
+
+      let filtered = campusData.filter(r => {
+        if (activeTab === 'everytime' && !r.isEmpty) return false;
+        if (activeTab === 'building' && r.building !== currentBuilding && !searchKeyword) return false;
+
+        if (searchKeyword && !r.name.toLowerCase().includes(searchKeyword) && !r.building.toLowerCase().includes(searchKeyword)) {
+          return false;
+        }
+
+        if (currentFilter === 'available' && r.status !== 'available') return false;
+        if (currentFilter === 'many' && r.plugs < 10) return false;
+        if (currentFilter === 'embedded' && !r.type.includes('매립형')) return false;
+
+        return true;
+      });
+
+      document.getElementById('roomCountBadge').innerText = `${filtered.length}개`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-10 text-slate-400">
+            <i class="fa-solid fa-plug-circle-xmark text-3xl mb-2"></i>
+            <p class="text-xs font-semibold">조건에 어울리는 강의실이 없습니다.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(room => {
+        let badgeClass = 'bg-emerald-100 text-emerald-700';
+        if (room.status === 'partial') badgeClass = 'bg-amber-100 text-amber-700';
+        if (room.status === 'unavailable') badgeClass = 'bg-rose-100 text-rose-700';
+
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl p-3.5 border border-slate-200/70 shadow-sm hover:shadow transition cursor-pointer space-y-2';
+        card.onclick = () => openRoomDetail(room);
+
+        card.innerHTML = `
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <span class="font-black text-sm text-slate-800">${room.name}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded ${badgeClass}">${room.statusText}</span>
+            </div>
+            <span class="text-[11px] text-slate-400 font-semibold">${room.distance} <i class="fa-solid fa-chevron-right text-[9px] ml-0.5"></i></span>
+          </div>
+
+          <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-100 text-slate-600">
+            <div class="flex items-center gap-3">
+              <span class="font-medium text-slate-700"><i class="fa-solid fa-plug text-blue-600"></i> 콘센트 <b class="font-bold">${room.plugs}개</b></span>
+              <span class="font-medium text-slate-700"><i class="fa-solid fa-usb text-indigo-600"></i> USB <b class="font-bold">${room.usb}개</b></span>
+            </div>
+            <span class="text-[10px] bg-slate-100 text-slate-600 font-semibold px-2 py-0.5 rounded">${room.type}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function openRoomDetail(room) {
+      document.getElementById('modalRoomTitle').innerText = room.name;
+      document.getElementById('modalBuilding').innerText = `${room.building} • 도보 ${room.distance}`;
+      document.getElementById('modalStatusBadge').innerText = room.statusText;
+      document.getElementById('modalPlug').innerText = `${room.plugs}개`;
+      document.getElementById('modalUsb').innerText = `${room.usb}개`;
+      document.getElementById('modalLocation').innerText = room.locationDetail;
+
+      document.getElementById('detailModal').classList.remove('hidden');
+    }
+
+    function openModal(type) {
+      if (type === 'report') document.getElementById('reportModal').classList.remove('hidden');
+    }
+
+    function closeModal(type) {
+      if (type === 'detail') document.getElementById('detailModal').classList.add('hidden');
+      if (type === 'report') document.getElementById('reportModal').classList.add('hidden');
+    }
+
+    function submitReport(e) {
+      e.preventDefault();
+      alert('제보해주셔서 감사합니다! 시설 정보 현황에 즉시 반영됩니다.');
+      closeModal('report');
+    }
+
+    // Initial load
+    render();
+  </script>
+</body>
+</html>
